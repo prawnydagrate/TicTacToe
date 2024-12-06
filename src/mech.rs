@@ -144,10 +144,13 @@ impl fmt::Display for Grid {
     }
 }
 
+pub type Move = (usize, usize);
+
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub struct Game {
     grid: Grid,
-    empty: Vec<(usize, usize)>,
+    empty: Vec<Move>,
+    undoubted: Option<(Player, Move)>,
     state: GameState,
     turn: Player,
 }
@@ -166,6 +169,7 @@ impl Game {
         Self {
             grid: Grid::new(n),
             empty,
+            undoubted: None,
             state: GameState::Ongoing,
             turn: Player::X,
         }
@@ -188,9 +192,19 @@ impl Game {
 
     /// Returns the positions of the remaining empty
     /// cells in which a move may be played, as a reference
-    /// to a `Vec<(usize, usize)>`.
-    pub fn empty(&self) -> &Vec<(usize, usize)> {
+    /// to a `Vec<Move>`.
+    pub fn empty(&self) -> &Vec<Move> {
         &self.empty
+    }
+
+    /// Returns the 'obvious move' in the position, if there
+    /// is such a move (i.e., a chance to immediately win
+    /// or prevent the opponent's immediate win, with an
+    /// immediate win given higher priority). Along with the
+    /// obvious move, the function returns the side who wins
+    /// with this move or would win if not for this move.
+    pub fn undoubted(&self) -> Option<(Player, Move)> {
+        self.undoubted
     }
 
     /// Attempts to play `X` or `O` (depending on which
@@ -199,7 +213,8 @@ impl Game {
     /// * The game must be ongoing
     /// * The position (`row`, `col`) must be within the grid,
     /// and empty
-    pub fn play(&mut self, row: usize, col: usize) -> Result<(), ()> {
+    pub fn play(&mut self, mv: Move) -> Result<(), ()> {
+        let (row, col) = mv;
         let n = self.grid.n();
         if self.state != GameState::Ongoing
             || row >= n
@@ -215,68 +230,142 @@ impl Game {
     }
 
     fn update_state(&mut self) {
+        self.undoubted = None;
+
         let n = self.grid.n();
 
-        let xwin = n as isize;
-        let owin = -xwin;
+        let xw = n as isize;
+        let ow = -xw;
 
         let mut row_scores = Vec::new();
         let mut cols = vec![Vec::new(); n];
         let mut diags = vec![Vec::new(); 2];
 
         let mut empty = Vec::new();
+        let (mut xwin, mut owin) = (None, None);
 
         // check rows
         for (i, row) in self.grid.data().iter().enumerate() {
+            let mut nempty = 0;
+            let mut empty_cell = None;
             let row_score: isize = row
                 .iter()
                 .enumerate()
                 .map(|(j, &cell)| {
-                    let cell_score: isize = cell.into();
+                    let pos = (i, j);
                     if cell == Cell::Empty {
-                        empty.push((i, j));
+                        nempty += 1;
+                        empty_cell = Some(pos);
+                        empty.push(pos);
                     }
+                    let cell_score: isize = cell.into();
+                    // it's in the \ diagonal
                     if i == j {
-                        diags[0].push(cell_score);
+                        diags[0].push((cell_score, pos));
                     }
+                    // it's in the / diagonal
                     if i + j == n - 1 {
-                        diags[1].push(cell_score);
+                        diags[1].push((cell_score, pos));
                     }
-                    cols[j].push(cell_score);
+                    cols[j].push((cell_score, pos));
                     cell_score
                 })
                 .sum();
-            row_scores.push(row_score);
+            row_scores.push((nempty, row_score, empty_cell));
         }
         self.empty = empty;
-        for row_score in row_scores {
-            if row_score == xwin {
+        for (nempty, row_score, empty_cell) in row_scores {
+            if row_score == xw {
                 return self.state = GameState::Decisive(Player::X);
-            }
-            if row_score == owin {
+            } else if row_score == ow {
                 return self.state = GameState::Decisive(Player::O);
+            }
+            if nempty == 1 {
+                if row_score == xw - 1 {
+                    xwin = empty_cell
+                } else if row_score == ow + 1 {
+                    owin = empty_cell;
+                }
             }
         }
         // check columns
         for col in cols {
-            let col_score: isize = col.into_iter().sum();
-            if col_score == xwin {
+            let mut nempty = 0;
+            let mut empty_cell = None;
+            let col_score: isize = col
+                .into_iter()
+                .map(|(cell_score, pos)| {
+                    if cell_score == 0 {
+                        nempty += 1;
+                        empty_cell = Some(pos);
+                    }
+                    cell_score
+                })
+                .sum();
+            if col_score == xw {
                 return self.state = GameState::Decisive(Player::X);
             }
-            if col_score == owin {
+            if col_score == ow {
                 return self.state = GameState::Decisive(Player::O);
+            }
+            if nempty == 1 {
+                if col_score == xw - 1 {
+                    xwin = empty_cell;
+                } else if col_score == ow + 1 {
+                    owin = empty_cell;
+                }
             }
         }
         // check diagonals
         for diag in diags {
-            let diag_score: isize = diag.into_iter().sum();
-            if diag_score == xwin {
+            let mut nempty = 0;
+            let mut empty_cell = None;
+            let diag_score: isize = diag
+                .into_iter()
+                .map(|(cell_score, pos)| {
+                    if cell_score == 0 {
+                        nempty += 1;
+                        empty_cell = Some(pos);
+                    }
+                    cell_score
+                })
+                .sum();
+            if diag_score == xw {
                 return self.state = GameState::Decisive(Player::X);
             }
-            if diag_score == owin {
+            if diag_score == ow {
                 return self.state = GameState::Decisive(Player::O);
             }
+            if nempty == 1 {
+                if diag_score == xw - 1 {
+                    xwin = empty_cell;
+                } else if diag_score == ow + 1 {
+                    owin = empty_cell;
+                }
+            }
         }
+        // check if there are any obvious moves
+        let (xwin, owin) = (
+            xwin.map(|pos| (Player::X, pos)),
+            owin.map(|pos| (Player::O, pos)),
+        );
+        // println!("position\n{}", self.grid());
+        self.undoubted = if self.turn == Player::X && xwin.is_some() {
+            // println!("x turn win");
+            xwin
+        } else if self.turn == Player::O && owin.is_some() {
+            // println!("o turn win");
+            owin
+        } else if xwin.is_some() {
+            // println!("x win");
+            xwin
+        } else if owin.is_some() {
+            // println!("o win");
+            owin
+        } else {
+            // println!("no win");
+            None
+        };
 
         self.state = if self.empty.is_empty() {
             GameState::Tied

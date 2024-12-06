@@ -5,7 +5,7 @@ use tic_tac_toe::{
 };
 
 fn main() {
-    let (n, depth) = (7, 3);
+    let (n, depth) = (7, 4);
     let mut game = Game::new(n);
     let mut mv = 0;
     let mut max_dur = Duration::from_nanos(0);
@@ -13,11 +13,11 @@ fn main() {
         mv += 1;
         println!("MOVE {mv}");
         let start = Instant::now();
-        let (r, c) = get_best_move(&game, depth);
+        let mv = get_best_move(&game, depth);
         let end = Instant::now();
         let dur = end.duration_since(start);
         max_dur = max_dur.max(dur);
-        game.play(r, c).unwrap();
+        game.play(mv).unwrap();
         println!(
             "BEST MOVE TOOK {}s ({n}x{n} grid, depth {depth})",
             dur.as_secs_f64(),
