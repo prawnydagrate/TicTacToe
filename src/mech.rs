@@ -1,3 +1,5 @@
+use std::fmt::{self, Formatter};
+
 /// Represents a cell on the grid.
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub enum Cell {
@@ -22,6 +24,15 @@ impl From<Cell> for isize {
 pub enum Player {
     X,
     O,
+}
+
+impl From<Player> for isize {
+    fn from(player: Player) -> Self {
+        match player {
+            Player::X => 1,
+            Player::O => -1,
+        }
+    }
 }
 
 impl From<Player> for Cell {
@@ -80,6 +91,56 @@ impl Grid {
     /// Returns the dimensions of the `n` by `n` grid.
     pub fn n(&self) -> usize {
         self.0.len()
+    }
+}
+
+impl fmt::Display for Grid {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let n = self.n();
+        let mut pp = String::new();
+        pp.push_str(
+            format!(
+                "┌{}┐\n",
+                "───┬".repeat(n).chars().take(4 * n - 1).collect::<String>()
+            )
+            .as_str(),
+        );
+        for (i, row) in self.0.iter().enumerate() {
+            if i == 0 {}
+            for (j, &col) in row.iter().enumerate() {
+                pp.push_str(
+                    format!(
+                        "│ {} ",
+                        match col {
+                            Cell::X => 'X',
+                            Cell::O => 'O',
+                            Cell::Empty => ' ',
+                        }
+                    )
+                    .as_str(),
+                );
+                if j == n - 1 {
+                    pp.push_str("│\n");
+                }
+            }
+            if i != n - 1 {
+                pp.push_str(
+                    format!(
+                        "├{}┤\n",
+                        "───┼".repeat(n).chars().take(4 * n - 1).collect::<String>()
+                    )
+                    .as_str(),
+                );
+            }
+        }
+        pp.push_str(
+            format!(
+                "└{}┘",
+                "───┴".repeat(n).chars().take(4 * n - 1).collect::<String>()
+            )
+            .as_str(),
+        );
+        write!(f, "{pp}")
     }
 }
 
@@ -148,6 +209,7 @@ impl Game {
             return Err(());
         }
         self.grid.data_mut()[row][col] = self.turn.into();
+        self.turn = !self.turn;
         self.update_state();
         Ok(())
     }
@@ -158,6 +220,7 @@ impl Game {
         let xwin = n as isize;
         let owin = -xwin;
 
+        let mut row_scores = Vec::new();
         let mut cols = vec![Vec::new(); n];
         let mut diags = vec![Vec::new(); 2];
 
@@ -179,10 +242,14 @@ impl Game {
                     if i + j == n - 1 {
                         diags[1].push(cell_score);
                     }
-                    cols[i].push(cell_score);
+                    cols[j].push(cell_score);
                     cell_score
                 })
                 .sum();
+            row_scores.push(row_score);
+        }
+        self.empty = empty;
+        for row_score in row_scores {
             if row_score == xwin {
                 return self.state = GameState::Decisive(Player::X);
             }
@@ -211,7 +278,7 @@ impl Game {
             }
         }
 
-        self.state = if empty.is_empty() {
+        self.state = if self.empty.is_empty() {
             GameState::Tied
         } else {
             GameState::Ongoing
