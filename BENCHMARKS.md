@@ -2,9 +2,11 @@
 
 This document shows calculation depths for various NxN grid, and the maximum time to find the best move at each depth. Note that these move times vary between positions (and sometimes may be _very_ different). Therefore the values shown are the _usual_ values.
 
-**PS**: For higher depths that take longer to execute, the test may not have been performed a sufficient number of times.
+## Note
 
-**PS #2**: The _Accuracy_ column in each table shows whether or not the algorithm **always** finds the optimal move at that depth. Rows marked with '?' have an unknown accuracy. You're welcome to donate knowledge or computing power in order to try and figure out whether those cells should have '✅' or '❌' in them. Also, just because the algorithm is not always accurate at a certain depth, it doesn't mean that depth is bad. For almost all of these cases, the algorithm performs quite well, and only fails on a small set of cases.
+- For higher depths that take longer to execute, the test may not have been performed a sufficient number of times.
+- The _Accuracy_ column in each table shows whether or not the algorithm **always** finds the optimal move at that depth. Rows marked with '?' have an unknown accuracy. You're welcome to donate knowledge or computing power in order to try and figure out whether those cells should have '✅' or '❌' in them.
+- Just because the algorithm is not always accurate at a certain depth, it doesn't mean that depth is bad. For almost all of these cases, the algorithm performs quite well, and only fails on a small set of cases.
 
 ## 3x3
 
@@ -15,7 +17,7 @@ The 3x3 grid is simple, so any depth works. A depth of 9 is ideal because:
 
 Mathematically, a depth much lower than 9 should also be enough to find the optimal move, but I'm not gonna get into all that.
 
-**UPDATE**: **Depth 6** also guarantees the best move, so there you go.
+**UPDATE**: **Depth 6** also looks like it guarantees the best move, so there you go.
 
 ## 4x4
 

@@ -349,21 +349,15 @@ impl Game {
             xwin.map(|pos| (Player::X, pos)),
             owin.map(|pos| (Player::O, pos)),
         );
-        // println!("position\n{}", self.grid());
         self.undoubted = if self.turn == Player::X && xwin.is_some() {
-            // println!("x turn win");
             xwin
         } else if self.turn == Player::O && owin.is_some() {
-            // println!("o turn win");
             owin
         } else if xwin.is_some() {
-            // println!("x win");
             xwin
         } else if owin.is_some() {
-            // println!("o win");
             owin
         } else {
-            // println!("no win");
             None
         };
 
