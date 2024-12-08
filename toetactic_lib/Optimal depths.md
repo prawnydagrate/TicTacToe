@@ -1,9 +1,10 @@
-# Optimal depths for NxN grids (by trial and error)
+# Optimal depths for NxN grids
 
-This document shows calculation depths for various NxN grid, and the maximum time to find the best move at each depth. Note that these move times vary between positions (and sometimes may be _very_ different). Therefore the values shown are the _usual_ values.
+This document shows calculation depths for various NxN grid, and the maximum time to find the best move at each depth. This data is collected using tests performed on my laptop.
 
 ## Note
 
+- Move times vary between positions (and sometimes may be _very_ different). Therefore the values shown are the _usual_ values.
 - For higher depths that take longer to execute, the test may not have been performed a sufficient number of times.
 - The _Accuracy_ column in each table shows whether or not the algorithm **always** finds the optimal move at that depth. Rows marked with '?' have an unknown accuracy. You're welcome to donate knowledge or computing power in order to try and figure out whether those cells should have '✅' or '❌' in them.
 - Just because the algorithm is not always accurate at a certain depth, it doesn't mean that depth is bad. For almost all of these cases, the algorithm performs quite well, and only fails on a small set of cases.

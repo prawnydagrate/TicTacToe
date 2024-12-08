@@ -5,6 +5,8 @@ edition = "2021"
 repository = "https://github.com/prawnydagrate/toetactic"
 
 [dependencies]
+crossterm = "0.28.1"
+ratatui = "0.29.0"
 toetactic_lib = { path = "toetactic_lib" }
 
 [[bin]]
