@@ -1,54 +1,54 @@
-use crate::AppResult;
+use crate::{
+    app_state::{AppState, CurrentScreen, PassedState},
+    helpers,
+    screens::exiting,
+    AppResult,
+};
 use ratatui::{
+    buffer::Buffer,
     crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind},
-    widgets::Widget,
+    layout::Rect,
+    style::Stylize,
+    symbols::border,
+    text::Line,
+    widgets::{Block, Paragraph, Widget},
     DefaultTerminal, Frame,
 };
-use toetactic_lib::mech::{Game, Move};
-
-const MIN_GRID_SIZE: usize = 3;
-const MAX_GRID_SIZE: usize = 8; // exclusive
-const GRID_SIZES: std::ops::Range<usize> = MIN_GRID_SIZE..MAX_GRID_SIZE;
-const SIZE_DEPTHS: [usize; MAX_GRID_SIZE] = [0, 0, 0, 6, 6, 5, 5, 4];
+use std::rc::Rc;
 
 #[derive(Debug, Default)]
-enum CurrentScreen {
-    #[default]
-    Setup,
-    Game,
+pub struct App<'a> {
+    current_screen: CurrentScreen,
+    state: AppState<'a>,
 }
 
-#[derive(Debug)]
-enum State {
-    Setup(usize),
-    Game(Option<Move>, Option<Game>),
-}
-
-impl Default for State {
-    fn default() -> Self {
-        Self::Setup(MIN_GRID_SIZE)
+impl Widget for &App<'_> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        let block = Block::bordered()
+            .title(Line::from(" Toe Tac Tic ".bold()).centered())
+            .border_set(border::ROUNDED);
+        let area = helpers::centered_scale(area, 0.9, 0.9);
+        Paragraph::new("").centered().block(block).render(area, buf);
+        match self.current_screen {
+            CurrentScreen::Pregame => (),
+            CurrentScreen::Ingame => (),
+            CurrentScreen::Exiting => {
+                exiting::ExitingWidget(PassedState(Rc::clone(&self.state.exiting)))
+                    .render(area, buf)
+            }
+        }
     }
 }
 
-#[derive(Debug, Default)]
-pub struct App {
-    screen: CurrentScreen,
-    state: State,
-    exit: bool,
-}
-
-impl Widget for &App {
-    fn render(self) {
-        todo!()
-    }
-}
-
-impl App {
+impl App<'_> {
     pub fn run(&mut self, terminal: &mut DefaultTerminal) -> AppResult {
         // main loop
-        while !self.exit {
+        loop {
+            if let Some(exiting::ExitingState::Left) = *self.state.exiting.borrow() {
+                break;
+            }
             // render
-            terminal.draw(|frame| self.draw(frame));
+            terminal.draw(|frame| self.draw(frame))?;
             // handle events
             self.handle_events()?;
         }
@@ -61,7 +61,7 @@ impl App {
 
     fn handle_events(&mut self) -> AppResult {
         Ok(match event::read()? {
-            Event::Key(key_event) if key_event.kind == KeyEventKind::Press => {
+            Event::Key(key_event) if key_event.kind == KeyEventKind::Release => {
                 self.handle_key_press(key_event)
             }
             _ => (),
@@ -77,6 +77,7 @@ impl App {
 
     fn exit(&mut self) {
         // TODO: add confirmation dialog
-        self.exit = true;
+        self.current_screen = CurrentScreen::Exiting;
+        *self.state.exiting.borrow_mut() = Some(exiting::ExitingState::default());
     }
 }
