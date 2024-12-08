@@ -1,6 +1,8 @@
+//! Game mechanics
+
 use std::fmt::{self, Formatter};
 
-/// Represents a cell on the grid.
+/// Represents the contents of a cell on the grid.
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub enum Cell {
     X,
@@ -106,7 +108,6 @@ impl fmt::Display for Grid {
             .as_str(),
         );
         for (i, row) in self.0.iter().enumerate() {
-            if i == 0 {}
             for (j, &col) in row.iter().enumerate() {
                 pp.push_str(
                     format!(
@@ -146,6 +147,7 @@ impl fmt::Display for Grid {
 
 pub type Move = (usize, usize);
 
+/// Represents a game of Tic Tac Toe.
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub struct Game {
     grid: Grid,
@@ -209,11 +211,12 @@ impl Game {
 
     /// Attempts to play `X` or `O` (depending on which
     /// player's turn it is to move) in the given position.
+    /// This function returns `None` if the move was unsuccessful.
     /// Requirements:
     /// * The game must be ongoing
     /// * The position (`row`, `col`) must be within the grid,
-    /// and empty
-    pub fn play(&mut self, mv: Move) -> Result<(), ()> {
+    ///   and empty
+    pub fn play(&mut self, mv: Move) -> Option<()> {
         let (row, col) = mv;
         let n = self.grid.n();
         if self.state != GameState::Ongoing
@@ -221,12 +224,12 @@ impl Game {
             || col >= n
             || self.grid.data()[row][col] != Cell::Empty
         {
-            return Err(());
+            return None;
         }
         self.grid.data_mut()[row][col] = self.turn.into();
         self.turn = !self.turn;
         self.update_state();
-        Ok(())
+        Some(())
     }
 
     fn update_state(&mut self) {

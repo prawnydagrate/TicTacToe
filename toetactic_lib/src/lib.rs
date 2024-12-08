@@ -1,20 +1,21 @@
 pub mod mech;
 
-use fastrand;
 use mech::{Game, GameState, Move, Player};
 use std::cmp;
 
-/// Gets the best move in the position, **assuming** the game
+/// Generates the best move in the position, **assuming** the game
 /// is ongoing. This function **will panic** if the game has already
 /// ended.
+///
+/// `depth` is the number of plies to search, not the number of fullmoves.
 pub fn get_best_move(game: &Game, depth: usize) -> Move {
     let maxmoves = game.grid().n().pow(2);
     if game.empty().len() == maxmoves {
         return game.empty()[fastrand::usize(0..maxmoves)];
     }
     let obv = game.undoubted();
-    if obv.is_some() {
-        return obv.unwrap().1;
+    if let Some((_, mv)) = obv {
+        return mv;
     }
     let isx = game.turn() == Player::X;
     let mut besteval = if isx { isize::MIN } else { isize::MAX };
@@ -50,9 +51,8 @@ fn minimax(game: &Game, depth: usize, mut alpha: isize, mut beta: isize) -> isiz
     let obv = game.undoubted();
     if game.turn() == Player::X {
         // maximizing player
-        match obv {
-            Some((Player::X, _)) => return 1,
-            _ => (),
+        if let Some((Player::X, _)) = obv {
+            return 1;
         }
         let mut eval = isize::MIN;
         for &mv in game.empty() {
@@ -67,9 +67,8 @@ fn minimax(game: &Game, depth: usize, mut alpha: isize, mut beta: isize) -> isiz
         eval
     } else {
         // minimizing player
-        match obv {
-            Some((Player::O, _)) => return -1,
-            _ => (),
+        if let Some((Player::O, _)) = obv {
+            return -1;
         }
         let mut eval = isize::MAX;
         for &mv in game.empty() {

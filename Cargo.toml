@@ -1,7 +1,12 @@
 [package]
-name = "tic_tac_toe"
+name = "toetactic"
 version = "0.1.0"
 edition = "2021"
+repository = "https://github.com/prawnydagrate/toetactic"
 
 [dependencies]
-fastrand = "2.2.0"
+toetactic_lib = { path = "toetactic_lib" }
+
+[[bin]]
+name = "toetactic"
+path = "src/main.rs"

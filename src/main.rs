@@ -1,5 +1,5 @@
-use std::time::{Duration, Instant};
-use tic_tac_toe::{
+/* use std::time::{Duration, Instant};
+use toetactic_lib::{
     get_best_move,
     mech::{Game, GameState},
 };
@@ -26,4 +26,6 @@ fn main() {
     }
     println!("RESULT: {:?}", game.state());
     println!("MAX DURATION: {}s", max_dur.as_secs_f64());
-}
+} */
+
+fn main() {}
