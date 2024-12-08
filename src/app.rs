@@ -1,20 +1,46 @@
 use crate::AppResult;
 use ratatui::{
     crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind},
-    DefaultTerminal,
+    widgets::Widget,
+    DefaultTerminal, Frame,
 };
+use toetactic_lib::mech::{Game, Move};
+
+const MIN_GRID_SIZE: usize = 3;
+const MAX_GRID_SIZE: usize = 8; // exclusive
+const GRID_SIZES: std::ops::Range<usize> = MIN_GRID_SIZE..MAX_GRID_SIZE;
+const SIZE_DEPTHS: [usize; MAX_GRID_SIZE] = [0, 0, 0, 6, 6, 5, 5, 4];
 
 #[derive(Debug, Default)]
-enum Screen {
+enum CurrentScreen {
     #[default]
-    Selector,
+    Setup,
     Game,
+}
+
+#[derive(Debug)]
+enum State {
+    Setup(usize),
+    Game(Option<Move>, Option<Game>),
+}
+
+impl Default for State {
+    fn default() -> Self {
+        Self::Setup(MIN_GRID_SIZE)
+    }
 }
 
 #[derive(Debug, Default)]
 pub struct App {
-    screen: Screen,
+    screen: CurrentScreen,
+    state: State,
     exit: bool,
+}
+
+impl Widget for &App {
+    fn render(self) {
+        todo!()
+    }
 }
 
 impl App {
@@ -22,13 +48,15 @@ impl App {
         // main loop
         while !self.exit {
             // render
-            match self.screen {
-                Screen::Selector => todo!(),
-                Screen::Game => todo!(),
-            }
+            terminal.draw(|frame| self.draw(frame));
             // handle events
             self.handle_events()?;
         }
+        Ok(())
+    }
+
+    fn draw(&self, frame: &mut Frame) {
+        frame.render_widget(self, frame.area());
     }
 
     fn handle_events(&mut self) -> AppResult {
