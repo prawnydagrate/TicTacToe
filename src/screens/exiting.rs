@@ -23,9 +23,9 @@ impl Widget for &ExitingWidget {
         let area = centered_scale(area, 0.6, 0.3);
         let state = *self.0.borrow();
         let opts = if state == ExitingState::Stay {
-            vec![" Stay ".bold().on_blue(), " Leave ".into()]
+            vec![" Stay ".bold().light_green(), " Leave ".dim()]
         } else {
-            vec![" Stay ".into(), " Leave ".bold().on_blue()]
+            vec![" Stay ".dim(), " Leave ".bold().light_red()]
         };
         let options = Line::from(opts);
         let block = Block::bordered()

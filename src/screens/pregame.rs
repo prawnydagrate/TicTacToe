@@ -1,4 +1,6 @@
-use crate::consts;
+use ratatui::{buffer::Buffer, layout::Rect, widgets::Widget};
+
+use crate::{consts, helpers::Rfc};
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub struct PregameState {
@@ -11,4 +13,10 @@ impl Default for PregameState {
             grid_size: consts::MIN_GRID_SIZE,
         }
     }
+}
+
+pub struct PregameWidget(pub Rfc<PregameState>);
+
+impl Widget for &PregameWidget {
+    fn render(self, area: Rect, buf: &mut Buffer) {}
 }
