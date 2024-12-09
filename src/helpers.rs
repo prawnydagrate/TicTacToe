@@ -30,3 +30,7 @@ pub fn centered_scale(area: Rect, horiz_scale: f64, vert_scale: f64) -> Rect {
 pub fn rfc<T>(v: T) -> Rfc<T> {
     Rc::new(RefCell::new(v))
 }
+
+pub fn pass<T>(state: &Rfc<T>) -> Rfc<T> {
+    Rc::clone(state)
+}

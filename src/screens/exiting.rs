@@ -1,4 +1,4 @@
-use crate::{app_state::PassedState, helpers::centered_scale};
+use crate::helpers::{centered_scale, Rfc};
 use ratatui::{
     buffer::Buffer,
     layout::Rect,
@@ -16,14 +16,25 @@ pub enum ExitingState {
     Left,
 }
 
-pub struct ExitingWidget(pub PassedState<ExitingState>);
+pub struct ExitingWidget(pub Rfc<ExitingState>);
 
 impl Widget for &ExitingWidget {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let area = centered_scale(area, 0.6, 0.3);
+        let state = *self.0.borrow();
+        let opts = if state == ExitingState::Stay {
+            vec![" Stay ".bold().on_blue(), " Leave ".into()]
+        } else {
+            vec![" Stay ".into(), " Leave ".bold().on_blue()]
+        };
+        let options = Line::from(opts);
         let block = Block::bordered()
             .title(Line::from(" Exit? ".bold()).centered())
+            .title_bottom(options.centered())
             .border_set(border::ROUNDED);
-        Paragraph::new("").centered().block(block).render(area, buf);
+        Paragraph::new("Are you sure you want to exit?")
+            .centered()
+            .block(block)
+            .render(area, buf);
     }
 }
