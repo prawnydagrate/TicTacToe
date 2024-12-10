@@ -1,17 +1,14 @@
 use crate::{
-    app_state::AppState,
-    helpers,
-    screens::{exiting, ingame, pregame, CurrentScreen},
-    AppResult,
+    app_state::AppState, consts, helpers, screens::{exiting, ingame, pregame, CurrentScreen}, AppResult
 };
 use ratatui::{
     buffer::Buffer,
     crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind},
-    layout::Rect,
+    layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Stylize},
     symbols::border,
-    text::Line,
-    widgets::{Block, Paragraph, Widget},
+    text::{Line, Text},
+    widgets::{Block, Borders, Paragraph, Widget},
     DefaultTerminal, Frame,
 };
 
@@ -23,18 +20,21 @@ pub struct App {
 
 impl Widget for &App {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let instructions = Line::from(vec![" <Q> ".bold().blue(), "to exit ".cyan()]);
-        Block::new().bg(Color::Rgb(17, 17, 17)).render(area, buf);
-        let area = helpers::centered_scale(area, 0.9, 0.9);
+        let instructions = Line::from(vec![" qq ".bold().blue(), "to exit ".cyan()]);
+        let area = helpers::center(area, Constraint::Percentage(94), Constraint::Percentage(94));
         let block = Block::bordered()
             .title(Line::from(" Toe Tac Tic ".bold()).centered())
             .title_bottom(instructions.centered())
+            .bg(consts::BGCOLOR)
             .border_set(border::THICK);
-        Paragraph::new("").centered().block(block).render(area, buf);
+        block.render(area, buf);
         match self.current_screen {
             CurrentScreen::Pregame => self.scr_pregame_render(area, buf),
             CurrentScreen::Ingame => self.scr_ingame_render(area, buf),
-            CurrentScreen::Exiting(_) => self.scr_exiting_render(area, buf),
+            CurrentScreen::Exiting(_) => self.scr_exiting_render(
+                helpers::center(area, Constraint::Percentage(60), Constraint::Percentage(40)),
+                buf,
+            ),
         }
     }
 }
@@ -73,7 +73,13 @@ impl App {
 
     fn handle_key_press(&mut self, key_event: KeyEvent) {
         match key_event.code {
-            KeyCode::Char('q') => self.exit(),
+            key @ KeyCode::Char('q') => {
+                if let CurrentScreen::Exiting(_) = self.current_screen {
+                    self.scr_exiting_handle_key(key)
+                } else {
+                    self.exit()
+                }
+            }
             key => match self.current_screen {
                 CurrentScreen::Pregame => self.scr_pregame_handle_key(key),
                 CurrentScreen::Ingame => self.scr_ingame_handle_key(key),
@@ -114,28 +120,46 @@ impl App {
     }
 
     fn scr_exiting_handle_key(&mut self, key: KeyCode) {
-        match key {
-            KeyCode::Right | KeyCode::Char('l') => {
-                if let Some(s) = &self.state.exiting {
-                    *s.borrow_mut() = exiting::ExitingState::Leave;
+        use exiting::ExitingState::*;
+
+        if let Some(ref s) = self.state.exiting {
+            match key {
+                KeyCode::Right | KeyCode::Char('l') => {
+                    *s.borrow_mut() = Leave;
+                }
+                KeyCode::Left | KeyCode::Char('h') => {
+                    *s.borrow_mut() = Stay;
+                }
+                KeyCode::Char(c @ ('y' | 'n' | 'q')) => {
+                    // final ones
+                    *s.borrow_mut() = match c {
+                        'y' | 'q' => Leave,
+                        'n' => Stay,
+                        _ => unreachable!(),
+                    };
+                    self.scr_exiting_finish();
+                }
+                KeyCode::Esc => {
+                    *s.borrow_mut() = Stay;
+                    self.scr_exiting_finish();
+                }
+                KeyCode::Enter => self.scr_exiting_finish(),
+                _ => (),
+            }
+        }
+    }
+
+    fn scr_exiting_finish(&mut self) {
+        use exiting::ExitingState::*;
+
+        if let CurrentScreen::Exiting(prev) = &self.current_screen {
+            if let Some(s) = &self.state.exiting {
+                self.current_screen = *prev.clone();
+                let mut st = s.borrow_mut();
+                if *st == Leave {
+                    *st = Left;
                 }
             }
-            KeyCode::Left | KeyCode::Char('h') => {
-                if let Some(s) = &self.state.exiting {
-                    *s.borrow_mut() = exiting::ExitingState::Stay;
-                }
-            }
-            KeyCode::Enter => {
-                if let (CurrentScreen::Exiting(prev), Some(s)) =
-                    (&self.current_screen, &self.state.exiting)
-                {
-                    self.current_screen = *prev.clone();
-                    if *s.borrow() == exiting::ExitingState::Leave {
-                        *s.borrow_mut() = exiting::ExitingState::Left;
-                    }
-                }
-            }
-            _ => (),
         }
     }
 

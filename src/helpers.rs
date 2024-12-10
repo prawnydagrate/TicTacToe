@@ -1,4 +1,4 @@
-use ratatui::layout::Rect;
+use ratatui::layout::{Constraint, Flex, Layout, Rect};
 use std::{cell::RefCell, rc::Rc};
 
 pub type AppResult = std::io::Result<()>;
@@ -25,6 +25,12 @@ pub fn centered_scale(area: Rect, horiz_scale: f64, vert_scale: f64) -> Rect {
         width: round(r - l),
         height: round(b - t),
     }
+}
+
+pub fn center(area: Rect, horiz: Constraint, vert: Constraint) -> Rect {
+    let [area] = Layout::horizontal([horiz]).flex(Flex::Center).areas(area);
+    let [area] = Layout::vertical([vert]).flex(Flex::Center).areas(area);
+    area
 }
 
 pub fn rfc<T>(v: T) -> Rfc<T> {
