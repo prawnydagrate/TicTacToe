@@ -1,12 +1,21 @@
-use crate::{consts, helpers::{self, centered_scale, Rfc}};
+use crate::{consts, helpers};
 use ratatui::{
     buffer::Buffer,
-    layout::{Constraint, Rect},
-    style::{Color, Stylize},
+    layout::Rect,
+    style::Stylize,
     symbols::border,
-    text::{Line, Text},
+    text::{Line, Span},
     widgets::{Block, Clear, Paragraph, Widget},
 };
+
+pub fn instructions() -> Vec<Span<'static>> {
+    vec![
+        " ←→".bold().blue(),
+        " Change option".into(),
+        "  ⏎".bold().blue(),
+        " Select option ".into(),
+    ]
+}
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone, Default)]
 pub enum ExitingState {
@@ -16,7 +25,7 @@ pub enum ExitingState {
     Left,
 }
 
-pub struct ExitingWidget(pub Rfc<ExitingState>);
+pub struct ExitingWidget(pub helpers::Rfc<ExitingState>);
 
 impl Widget for &ExitingWidget {
     fn render(self, area: Rect, buf: &mut Buffer) {
@@ -27,6 +36,7 @@ impl Widget for &ExitingWidget {
             vec![" Stay ".dim(), " Leave ".bold().light_red()]
         };
         let options = Line::from(opts);
+        Clear.render(area, buf);
         let block = Block::bordered()
             .title(Line::from(" Exit? ".bold()).centered())
             .title_bottom(options.centered())

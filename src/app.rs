@@ -1,14 +1,17 @@
 use crate::{
-    app_state::AppState, consts, helpers, screens::{exiting, ingame, pregame, CurrentScreen}, AppResult
+    app_state::AppState,
+    consts, helpers,
+    screens::{exiting, ingame, pregame, CurrentScreen},
+    AppResult,
 };
 use ratatui::{
     buffer::Buffer,
     crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind},
-    layout::{Constraint, Direction, Layout, Rect},
-    style::{Color, Stylize},
+    layout::{Constraint, Rect},
+    style::Stylize,
     symbols::border,
-    text::{Line, Text},
-    widgets::{Block, Borders, Paragraph, Widget},
+    text::Line,
+    widgets::{Block, Widget},
     DefaultTerminal, Frame,
 };
 
@@ -20,7 +23,16 @@ pub struct App {
 
 impl Widget for &App {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let instructions = Line::from(vec![" qq ".bold().blue(), "to exit ".cyan()]);
+        let mut instructions = Vec::new();
+        instructions.extend(match self.current_screen {
+            CurrentScreen::Pregame => pregame::instructions(),
+            CurrentScreen::Exiting(_) => exiting::instructions(),
+            _ => Vec::new(),
+        });
+        if !matches!(self.current_screen, CurrentScreen::Exiting(_)) {
+            instructions.extend([" qq".bold().blue(), " Exit ".into()]);
+        }
+        let instructions = Line::from(instructions);
         let area = helpers::center(area, Constraint::Percentage(94), Constraint::Percentage(94));
         let block = Block::bordered()
             .title(Line::from(" Toe Tac Tic ".bold()).centered())
@@ -31,22 +43,18 @@ impl Widget for &App {
         match self.current_screen {
             CurrentScreen::Pregame => self.scr_pregame_render(area, buf),
             CurrentScreen::Ingame => self.scr_ingame_render(area, buf),
-            CurrentScreen::Exiting(_) => self.scr_exiting_render(
-                helpers::center(area, Constraint::Percentage(60), Constraint::Percentage(40)),
-                buf,
-            ),
+            CurrentScreen::Exiting(_) => self.scr_exiting_render(area, buf),
         }
     }
 }
 
 impl App {
     pub fn run(&mut self, terminal: &mut DefaultTerminal) -> AppResult {
-        // main loop
-        loop {
+        'mainloop: loop {
             // exit
             if let Some(s) = &self.state.exiting {
                 if *s.borrow() == exiting::ExitingState::Left {
-                    break;
+                    break 'mainloop;
                 }
             }
             // render
@@ -90,16 +98,33 @@ impl App {
 
     // pregame screen
     fn scr_pregame_render(&self, area: Rect, buf: &mut Buffer) {
-        if let (CurrentScreen::Pregame, Some(st)) = (&self.current_screen, &self.state.pregame) {
+        if let Some(ref st) = self.state.pregame {
             pregame::PregameWidget(helpers::pass(st)).render(area, buf);
         }
     }
 
-    fn scr_pregame_handle_key(&mut self, key: KeyCode) {}
+    fn scr_pregame_handle_key(&mut self, key: KeyCode) {
+        if let Some(ref st) = self.state.pregame {
+            let mut s = (*st).borrow_mut();
+            match key {
+                KeyCode::Up => {
+                    if s.grid_size < consts::MAX_GRID_SIZE {
+                        s.grid_size += 1
+                    }
+                }
+                KeyCode::Down => {
+                    if s.grid_size > consts::MIN_GRID_SIZE {
+                        s.grid_size -= 1
+                    }
+                }
+                _ => (),
+            }
+        }
+    }
 
     // ingame screen
     fn scr_ingame_render(&self, area: Rect, buf: &mut Buffer) {
-        if let (CurrentScreen::Ingame, Some(st)) = (&self.current_screen, &self.state.ingame) {
+        if let Some(ref st) = self.state.ingame {
             ingame::IngameWidget(helpers::pass(st)).render(area, buf);
         }
     }
@@ -115,7 +140,10 @@ impl App {
                 CurrentScreen::Ingame => self.scr_ingame_render(area, buf),
                 CurrentScreen::Exiting(_) => unreachable!(),
             }
-            exiting::ExitingWidget(helpers::pass(st)).render(area, buf);
+            exiting::ExitingWidget(helpers::pass(st)).render(
+                helpers::center(area, Constraint::Percentage(60), Constraint::Percentage(40)),
+                buf,
+            );
         }
     }
 
