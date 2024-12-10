@@ -107,12 +107,12 @@ impl App {
         if let Some(ref st) = self.state.pregame {
             let mut s = (*st).borrow_mut();
             match key {
-                KeyCode::Up => {
+                KeyCode::Up | KeyCode::Right | KeyCode::Char('k') => {
                     if s.grid_size < consts::MAX_GRID_SIZE {
-                        s.grid_size += 1
+                     s.grid_size += 1
                     }
                 }
-                KeyCode::Down => {
+                KeyCode::Down | KeyCode::Left | KeyCode::Char('j') => {
                     if s.grid_size > consts::MIN_GRID_SIZE {
                         s.grid_size -= 1
                     }
@@ -141,7 +141,7 @@ impl App {
                 CurrentScreen::Exiting(_) => unreachable!(),
             }
             exiting::ExitingWidget(helpers::pass(st)).render(
-                helpers::center(area, Constraint::Percentage(60), Constraint::Percentage(40)),
+                helpers::center(area, Constraint::Percentage(65), Constraint::Percentage(35)),
                 buf,
             );
         }
@@ -152,10 +152,10 @@ impl App {
 
         if let Some(ref s) = self.state.exiting {
             match key {
-                KeyCode::Right | KeyCode::Char('l') => {
+                KeyCode::Right | KeyCode::Char('l' | 'j') => {
                     *s.borrow_mut() = Leave;
                 }
-                KeyCode::Left | KeyCode::Char('h') => {
+                KeyCode::Left | KeyCode::Char('h' | 'k') => {
                     *s.borrow_mut() = Stay;
                 }
                 KeyCode::Char(c @ ('y' | 'n' | 'q')) => {

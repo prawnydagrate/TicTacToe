@@ -1,7 +1,7 @@
 use crate::{consts, helpers};
 use ratatui::{
     buffer::Buffer,
-    layout::Rect,
+    layout::{Constraint, Rect},
     style::Stylize,
     symbols::border,
     text::{Line, Span},
@@ -37,14 +37,28 @@ impl Widget for &ExitingWidget {
         };
         let options = Line::from(opts);
         Clear.render(area, buf);
-        let block = Block::bordered()
+        Block::bordered()
             .title(Line::from(" Exit? ".bold()).centered())
             .title_bottom(options.centered())
             .bg(consts::BGCOLOR)
-            .border_set(border::ROUNDED);
-        Paragraph::new(consts::EXIT_CONFIRM_TEXT)
-            .centered()
-            .block(block)
+            .border_set(border::PLAIN)
             .render(area, buf);
+        let wraplns = textwrap::wrap(
+            consts::EXIT_CONFIRM_TEXT,
+            (area.width as f64 * 0.7).round() as usize,
+        );
+        let height = wraplns.len() as u16;
+        let mut width = 0;
+        let text: String = wraplns
+            .into_iter()
+            .map(|ln| {
+                width = std::cmp::max(width, ln.len() as u16);
+                ln
+            })
+            .collect();
+        Paragraph::new(text).centered().render(
+            helpers::center(area, Constraint::Length(width), Constraint::Length(height)),
+            buf,
+        );
     }
 }
