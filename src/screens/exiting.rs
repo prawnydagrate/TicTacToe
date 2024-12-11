@@ -41,7 +41,7 @@ impl Widget for &ExitingWidget {
             .title(Line::from(" Exit? ".bold()).centered())
             .title_bottom(options.centered())
             .bg(consts::BGCOLOR)
-            .border_set(border::PLAIN)
+            .border_set(border::ROUNDED)
             .render(area, buf);
         let wraplns = textwrap::wrap(
             consts::EXIT_CONFIRM_TEXT,
