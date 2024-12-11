@@ -38,16 +38,29 @@ fn get_collapsed_borders(
     gsize: usize,
     bset: border::Set,
     lset: line::Set,
+    ttt: bool,
 ) -> (Borders, border::Set) {
     if r == 0 {
         // first row
         if c == 0 {
             // first cell
-            (Borders::LEFT | Borders::TOP, bset)
+            (
+                if !ttt {
+                    Borders::LEFT | Borders::TOP
+                } else {
+                    Borders::NONE
+                },
+                bset,
+            )
         } else if c + 1 == gsize {
             // last column
             (
-                Borders::LEFT | Borders::TOP | Borders::RIGHT,
+                Borders::LEFT
+                    | if ttt {
+                        Borders::NONE
+                    } else {
+                        Borders::TOP | Borders::RIGHT
+                    },
                 border::Set {
                     top_left: lset.horizontal_down,
                     ..bset
@@ -56,7 +69,7 @@ fn get_collapsed_borders(
         } else {
             // somewhere in the middle
             (
-                Borders::LEFT | Borders::TOP,
+                Borders::LEFT | if ttt { Borders::NONE } else { Borders::TOP },
                 border::Set {
                     top_left: lset.horizontal_down,
                     ..bset
@@ -68,7 +81,12 @@ fn get_collapsed_borders(
         if c == 0 {
             // first column
             (
-                Borders::BOTTOM | Borders::LEFT | Borders::TOP,
+                Borders::TOP
+                    | if ttt {
+                        Borders::NONE
+                    } else {
+                        Borders::BOTTOM | Borders::LEFT
+                    },
                 border::Set {
                     top_left: lset.vertical_right,
                     ..bset
@@ -77,7 +95,13 @@ fn get_collapsed_borders(
         } else if c + 1 == gsize {
             // last column
             (
-                Borders::TOP | Borders::RIGHT | Borders::BOTTOM | Borders::LEFT,
+                Borders::TOP
+                    | Borders::LEFT
+                    | if ttt {
+                        Borders::NONE
+                    } else {
+                        Borders::RIGHT | Borders::BOTTOM
+                    },
                 border::Set {
                     top_left: lset.cross,
                     top_right: lset.vertical_left,
@@ -88,7 +112,7 @@ fn get_collapsed_borders(
         } else {
             // somewhere in the middle
             (
-                Borders::BOTTOM | Borders::LEFT | Borders::TOP,
+                Borders::LEFT | Borders::TOP | if ttt { Borders::NONE } else { Borders::BOTTOM },
                 border::Set {
                     top_left: lset.cross,
                     bottom_left: lset.horizontal_up,
@@ -101,7 +125,7 @@ fn get_collapsed_borders(
         if c == 0 {
             // first column
             (
-                Borders::LEFT | Borders::TOP,
+                Borders::TOP | if ttt { Borders::NONE } else { Borders::LEFT },
                 border::Set {
                     top_left: lset.vertical_right,
                     ..bset
@@ -110,7 +134,7 @@ fn get_collapsed_borders(
         } else if c + 1 == gsize {
             // last column
             (
-                Borders::LEFT | Borders::TOP | Borders::RIGHT,
+                Borders::LEFT | Borders::TOP | if ttt { Borders::NONE } else { Borders::RIGHT },
                 border::Set {
                     top_left: lset.cross,
                     top_right: lset.vertical_left,
@@ -147,13 +171,13 @@ impl Widget for &PregameWidget {
         let grid_size = (*self.0).borrow().grid_size;
         Block::default()
             .title(Line::from(format!("Choose your grid: {grid_size}x{grid_size}")).centered())
-            .render(helpers::centered_scale(garea, 1.1, 1.1), buf);
+            .render(helpers::centered_scale(garea, 1.15, 1.15), buf);
         let rows = Layout::vertical((0..grid_size).map(|_| Constraint::Fill(1))).split(garea);
         for (r, &row) in rows.iter().enumerate() {
             let cols = Layout::horizontal((0..grid_size).map(|_| Constraint::Fill(1))).split(row);
             for (c, &cell) in cols.iter().enumerate() {
                 let (borders, border_set) =
-                    get_collapsed_borders(r, c, grid_size, border::PLAIN, line::NORMAL);
+                    get_collapsed_borders(r, c, grid_size, border::PLAIN, line::NORMAL, true);
                 Block::new()
                     .borders(borders)
                     .border_set(border_set)
