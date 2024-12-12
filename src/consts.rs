@@ -11,4 +11,6 @@ pub const PREGAME_GRID_SIZE: f64 = 0.8;
 
 pub const PREGAME_CONFIRM_TEXT: &str = "Would you like to play X or O? (X plays first)";
 
+pub const INGAME_GRID_SIZE: f64 = 0.8;
+
 pub const EXIT_CONFIRM_TEXT: &str = "Are you sure you want to exit?";

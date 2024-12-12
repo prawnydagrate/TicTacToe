@@ -37,9 +37,9 @@ impl Widget for &PregameConfirmWidget {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let state = self.0.borrow();
         let opts = if state.option_state == PregameConfirmOptionState::X {
-            vec![" X ".bold().light_green(), " O ".dim()]
+            vec![" X ".bold().light_blue(), " O ".dim()]
         } else {
-            vec![" X ".dim(), " O ".bold().light_green()]
+            vec![" X ".dim(), " O ".bold().light_blue()]
         };
         let options = Line::from(opts);
         Clear.render(area, buf);

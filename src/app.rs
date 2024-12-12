@@ -28,8 +28,8 @@ impl Widget for &App {
         instructions.extend(match self.current_screen {
             CurrentScreen::Pregame => pregame::instructions(),
             CurrentScreen::PregameConfirm => pregame_confirm::instructions(),
+            CurrentScreen::Ingame => ingame::instructions(),
             CurrentScreen::Exiting(_) => exiting::instructions(),
-            _ => Vec::new(),
         });
         if !matches!(self.current_screen, CurrentScreen::Exiting(_)) {
             instructions.extend([" qq".bold().blue(), " Exit ".into()]);
@@ -183,7 +183,7 @@ impl App {
             {
                 self.state.ingame = Some(helpers::rfc(ingame::IngameState {
                     game: Game::new(pregame_st.borrow().grid_size),
-                    turn: match turn.borrow().option_state {
+                    user: match turn.borrow().option_state {
                         X => Player::X,
                         O => Player::O,
                     },
@@ -201,7 +201,24 @@ impl App {
         }
     }
 
-    fn scr_ingame_handle_key(&mut self, key: KeyCode) {}
+    fn scr_ingame_handle_key(&mut self, key: KeyCode) {
+        if let Some(ref st) = self.state.ingame {
+            let avail = st.borrow().game.empty();
+            let maxrc = st.borrow().game.grid().n() - 1;
+            let (r, c) = st.borrow().selected;
+            let left = (r, c.saturating_sub(1));
+            let down = (if r < maxrc { r + 1 } else { r }, c);
+            let up = (r.saturating_sub(1), c);
+            let right = (r, if c < maxrc { c + 1 } else { c });
+            match key {
+                KeyCode::Left | KeyCode::Char('h') => st.borrow_mut().selected = left,
+                KeyCode::Down | KeyCode::Char('j') => st.borrow_mut().selected = down,
+                KeyCode::Up | KeyCode::Char('k') => st.borrow_mut().selected = up,
+                KeyCode::Right | KeyCode::Char('l') => st.borrow_mut().selected = right,
+                _ => (),
+            }
+        }
+    }
 
     // exiting dialog
     fn scr_exiting_render(&self, area: Rect, buf: &mut Buffer) {

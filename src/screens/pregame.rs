@@ -5,7 +5,7 @@ use ratatui::{
     style::Stylize,
     symbols::{border, line},
     text::{Line, Span},
-    widgets::{Block, Borders, Widget},
+    widgets::{Block, Widget},
 };
 
 pub fn instructions() -> Vec<Span<'static>> {
@@ -32,128 +32,6 @@ impl Default for PregameState {
 
 pub struct PregameWidget(pub helpers::Rfc<PregameState>);
 
-fn get_collapsed_borders(
-    r: usize,
-    c: usize,
-    gsize: usize,
-    bset: border::Set,
-    lset: line::Set,
-    ttt: bool,
-) -> (Borders, border::Set) {
-    if r == 0 {
-        // first row
-        if c == 0 {
-            // first cell
-            (
-                if !ttt {
-                    Borders::LEFT | Borders::TOP
-                } else {
-                    Borders::NONE
-                },
-                bset,
-            )
-        } else if c + 1 == gsize {
-            // last column
-            (
-                Borders::LEFT
-                    | if ttt {
-                        Borders::NONE
-                    } else {
-                        Borders::TOP | Borders::RIGHT
-                    },
-                border::Set {
-                    top_left: lset.horizontal_down,
-                    ..bset
-                },
-            )
-        } else {
-            // somewhere in the middle
-            (
-                Borders::LEFT | if ttt { Borders::NONE } else { Borders::TOP },
-                border::Set {
-                    top_left: lset.horizontal_down,
-                    ..bset
-                },
-            )
-        }
-    } else if r + 1 == gsize {
-        // last row
-        if c == 0 {
-            // first column
-            (
-                Borders::TOP
-                    | if ttt {
-                        Borders::NONE
-                    } else {
-                        Borders::BOTTOM | Borders::LEFT
-                    },
-                border::Set {
-                    top_left: lset.vertical_right,
-                    ..bset
-                },
-            )
-        } else if c + 1 == gsize {
-            // last column
-            (
-                Borders::TOP
-                    | Borders::LEFT
-                    | if ttt {
-                        Borders::NONE
-                    } else {
-                        Borders::RIGHT | Borders::BOTTOM
-                    },
-                border::Set {
-                    top_left: lset.cross,
-                    top_right: lset.vertical_left,
-                    bottom_left: lset.horizontal_up,
-                    ..bset
-                },
-            )
-        } else {
-            // somewhere in the middle
-            (
-                Borders::LEFT | Borders::TOP | if ttt { Borders::NONE } else { Borders::BOTTOM },
-                border::Set {
-                    top_left: lset.cross,
-                    bottom_left: lset.horizontal_up,
-                    ..bset
-                },
-            )
-        }
-    } else {
-        // one of the rows in between
-        if c == 0 {
-            // first column
-            (
-                Borders::TOP | if ttt { Borders::NONE } else { Borders::LEFT },
-                border::Set {
-                    top_left: lset.vertical_right,
-                    ..bset
-                },
-            )
-        } else if c + 1 == gsize {
-            // last column
-            (
-                Borders::LEFT | Borders::TOP | if ttt { Borders::NONE } else { Borders::RIGHT },
-                border::Set {
-                    top_left: lset.cross,
-                    top_right: lset.vertical_left,
-                    ..bset
-                },
-            )
-        } else {
-            // somewhere in between
-            (
-                Borders::LEFT | Borders::TOP,
-                border::Set {
-                    top_left: lset.cross,
-                    ..bset
-                },
-            )
-        }
-    }
-}
-
 impl Widget for &PregameWidget {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let (gwidth, gheight) = if area.width * 2 < area.height {
@@ -177,7 +55,7 @@ impl Widget for &PregameWidget {
             let cols = Layout::horizontal((0..grid_size).map(|_| Constraint::Fill(1))).split(row);
             for (c, &cell) in cols.iter().enumerate() {
                 let (borders, border_set) =
-                    get_collapsed_borders(r, c, grid_size, border::PLAIN, line::NORMAL, true);
+                    helpers::get_collapsed_borders(r, c, grid_size, border::PLAIN, line::NORMAL, true);
                 Block::new()
                     .borders(borders)
                     .border_set(border_set)

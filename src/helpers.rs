@@ -1,4 +1,4 @@
-use ratatui::layout::{Constraint, Flex, Layout, Rect};
+use ratatui::{layout::{Constraint, Flex, Layout, Rect}, symbols::{border, line}, widgets::Borders};
 use std::{cell::RefCell, rc::Rc};
 
 pub type AppResult = std::io::Result<()>;
@@ -40,3 +40,126 @@ pub fn rfc<T>(v: T) -> Rfc<T> {
 pub fn pass<T>(state: &Rfc<T>) -> Rfc<T> {
     Rc::clone(state)
 }
+
+pub fn get_collapsed_borders(
+    r: usize,
+    c: usize,
+    gsize: usize,
+    bset: border::Set,
+    lset: line::Set,
+    ttt: bool,
+) -> (Borders, border::Set) {
+    if r == 0 {
+        // first row
+        if c == 0 {
+            // first cell
+            (
+                if !ttt {
+                    Borders::LEFT | Borders::TOP
+                } else {
+                    Borders::NONE
+                },
+                bset,
+            )
+        } else if c + 1 == gsize {
+            // last column
+            (
+                Borders::LEFT
+                    | if ttt {
+                        Borders::NONE
+                    } else {
+                        Borders::TOP | Borders::RIGHT
+                    },
+                border::Set {
+                    top_left: lset.horizontal_down,
+                    ..bset
+                },
+            )
+        } else {
+            // somewhere in the middle
+            (
+                Borders::LEFT | if ttt { Borders::NONE } else { Borders::TOP },
+                border::Set {
+                    top_left: lset.horizontal_down,
+                    ..bset
+                },
+            )
+        }
+    } else if r + 1 == gsize {
+        // last row
+        if c == 0 {
+            // first column
+            (
+                Borders::TOP
+                    | if ttt {
+                        Borders::NONE
+                    } else {
+                        Borders::BOTTOM | Borders::LEFT
+                    },
+                border::Set {
+                    top_left: lset.vertical_right,
+                    ..bset
+                },
+            )
+        } else if c + 1 == gsize {
+            // last column
+            (
+                Borders::TOP
+                    | Borders::LEFT
+                    | if ttt {
+                        Borders::NONE
+                    } else {
+                        Borders::RIGHT | Borders::BOTTOM
+                    },
+                border::Set {
+                    top_left: lset.cross,
+                    top_right: lset.vertical_left,
+                    bottom_left: lset.horizontal_up,
+                    ..bset
+                },
+            )
+        } else {
+            // somewhere in the middle
+            (
+                Borders::LEFT | Borders::TOP | if ttt { Borders::NONE } else { Borders::BOTTOM },
+                border::Set {
+                    top_left: lset.cross,
+                    bottom_left: lset.horizontal_up,
+                    ..bset
+                },
+            )
+        }
+    } else {
+        // one of the rows in between
+        if c == 0 {
+            // first column
+            (
+                Borders::TOP | if ttt { Borders::NONE } else { Borders::LEFT },
+                border::Set {
+                    top_left: lset.vertical_right,
+                    ..bset
+                },
+            )
+        } else if c + 1 == gsize {
+            // last column
+            (
+                Borders::LEFT | Borders::TOP | if ttt { Borders::NONE } else { Borders::RIGHT },
+                border::Set {
+                    top_left: lset.cross,
+                    top_right: lset.vertical_left,
+                    ..bset
+                },
+            )
+        } else {
+            // somewhere in between
+            (
+                Borders::LEFT | Borders::TOP,
+                border::Set {
+                    top_left: lset.cross,
+                    ..bset
+                },
+            )
+        }
+    }
+}
+
