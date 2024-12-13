@@ -1,4 +1,4 @@
-# toetactic_lib
+# ToeTacTic library
 
 `toetactic_lib` is a library that provides functionality as an engine that plays Tic Tac Toe optimally, on any square grid larger than 2x2 (theoretically).
 

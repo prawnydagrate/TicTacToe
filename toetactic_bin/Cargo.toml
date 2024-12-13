@@ -3,12 +3,13 @@ name = "toetactic"
 version = "0.1.0"
 edition = "2021"
 repository = "https://github.com/prawnydagrate/toetactic"
+description = "A Tic Tac Toe game for your terminal"
+keywords = ["tictactoe", "tui", "engine", "minimax", "algorithm"]
+categories = ["games", "command-line-utilities"]
+license = "MIT"
 
 [dependencies]
 crossterm = "0.28.1"
 ratatui = "0.29.0"
 textwrap = "0.16.1"
 toetactic_lib = { version = "0.1.0", path = "../toetactic_lib" }
-
-[[bin]]
-name = "toetactic"

@@ -3,6 +3,9 @@ name = "toetactic_lib"
 version = "0.1.0"
 edition = "2021"
 repository = "https://github.com/prawnydagrate/toetactic"
+description = "A library for analyzing NxN Tic Tac Toe positions"
+keywords = ["tictactoe", "engine", "minimax", "algorithm"]
+license = "MIT"
 
 [dependencies]
 fastrand = "2.2.0"
