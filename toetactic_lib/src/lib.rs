@@ -1,3 +1,5 @@
+//! A library for analyzing `N`x`N` Tic Tac Toe positions
+
 pub mod mech;
 
 use mech::{Game, GameState, Move, Player};

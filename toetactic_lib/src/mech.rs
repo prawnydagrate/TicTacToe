@@ -66,6 +66,7 @@ pub enum GameState {
     Decisive(Player),
 }
 
+/// Represents the game's grid data as a [`Vec`] of rows, where each row is a [`Vec`] of cells.
 pub type GridData = Vec<Vec<Cell>>;
 
 /// Represents the game grid.
@@ -145,6 +146,7 @@ impl fmt::Display for Grid {
     }
 }
 
+/// Represents a move as a row index (first) and a column index (second) on a grid.
 pub type Move = (usize, usize);
 
 /// Represents a game of Tic Tac Toe.
