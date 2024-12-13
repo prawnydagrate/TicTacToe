@@ -1,8 +1,9 @@
 use ratatui::{layout::{Constraint, Flex, Layout, Rect}, symbols::{border, line}, widgets::Borders};
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, rc::Rc, sync::{Arc, Mutex}};
 
 pub type AppResult = std::io::Result<()>;
 pub type Rfc<T> = Rc<RefCell<T>>;
+pub type Amtx<T> = Arc<Mutex<T>>;
 
 pub fn centered_scale(area: Rect, horiz_scale: f64, vert_scale: f64) -> Rect {
     let round = |f: f64| f.round() as u16;
@@ -37,8 +38,16 @@ pub fn rfc<T>(v: T) -> Rfc<T> {
     Rc::new(RefCell::new(v))
 }
 
+pub fn amtx<T>(v: T) -> Amtx<T> {
+    Arc::new(Mutex::new(v))
+}
+
 pub fn pass<T>(state: &Rfc<T>) -> Rfc<T> {
     Rc::clone(state)
+}
+
+pub fn pass_atomic<T>(state: &Amtx<T>) -> Amtx<T> {
+    Arc::clone(state)
 }
 
 pub fn get_collapsed_borders(

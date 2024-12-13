@@ -3,11 +3,11 @@ use crate::{
     screens::{exiting, ingame, pregame, pregame_confirm},
 };
 
-#[derive(Debug, Eq, PartialEq, Clone)]
+#[derive(Debug, Clone)]
 pub struct AppState {
     pub pregame: Option<helpers::Rfc<pregame::PregameState>>,
     pub pregame_confirm: Option<helpers::Rfc<pregame_confirm::PregameConfirmState>>,
-    pub ingame: Option<helpers::Rfc<ingame::IngameState>>,
+    pub ingame: Option<helpers::Amtx<ingame::IngameState>>,
     pub exiting: Option<helpers::Rfc<exiting::ExitingState>>,
 }
 

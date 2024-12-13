@@ -5,9 +5,9 @@ use ratatui::{
     style::{Color, Stylize},
     symbols::{border, line},
     text::{Line, Span},
-    widgets::{Block, Widget},
+    widgets::{Block, Paragraph, Widget},
 };
-use toetactic_lib::mech::{Game, GameState, Move, Player};
+use toetactic_lib::mech::{self, Game, GameState, Move, Player};
 
 pub fn instructions() -> Vec<Span<'static>> {
     vec![
@@ -18,14 +18,15 @@ pub fn instructions() -> Vec<Span<'static>> {
     ]
 }
 
-#[derive(Debug, Eq, PartialEq, Clone)]
+#[derive(Debug, Clone)]
 pub struct IngameState {
     pub game: Game,
     pub user: Player,
     pub selected: Move,
+    pub inthread: bool,
 }
 
-pub struct IngameWidget(pub helpers::Rfc<IngameState>);
+pub struct IngameWidget(pub helpers::Amtx<IngameState>);
 
 impl Widget for &IngameWidget {
     fn render(self, area: Rect, buf: &mut Buffer) {
@@ -41,7 +42,7 @@ impl Widget for &IngameWidget {
             Constraint::Length(gwidth),
             Constraint::Length(gheight),
         );
-        let st = (*self.0).borrow();
+        let mut st = self.0.lock().unwrap();
         let grid_size = st.game.grid().n();
         Block::default()
             .title(
@@ -72,10 +73,33 @@ impl Widget for &IngameWidget {
                     .borders(borders)
                     .border_set(border_set)
                     .render(cell, buf);
-                if st.selected == (r, c) && st.game.turn() == st.user && st.game.state() == GameState::Ongoing {
-                    Block::new().bg(Color::Blue).render(helpers::centered_scale(cell, 0.4, 0.4), buf);
+                let content = st.game.grid().data()[r][c];
+                if content != mech::Cell::Empty {
+                    Paragraph::new(match content {
+                        mech::Cell::X => "X",
+                        mech::Cell::O => "O",
+                        _ => unreachable!(),
+                    })
+                    .centered()
+                    .render(
+                        helpers::center(cell, Constraint::Length(1), Constraint::Length(1)),
+                        buf,
+                    );
                 }
-            }
+                let userturn = st.game.turn() == st.user;
+                if st.selected == (r, c)
+                    && st.game.turn() == st.user
+                    && st.game.state() == GameState::Ongoing
+                {
+                    Block::new()
+                        .bg(if st.game.empty().contains(&(r, c)) {
+                            Color::LightBlue
+                        } else {
+                            Color::LightRed
+                        })
+                        .render(helpers::centered_scale(cell, 0.4, 0.4), buf);
+                }
+                            }
         }
     }
 }

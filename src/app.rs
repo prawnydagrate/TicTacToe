@@ -1,3 +1,4 @@
+use std::thread;
 use crate::{
     app_state::AppState,
     consts, helpers,
@@ -181,13 +182,14 @@ impl App {
             if let (Some(turn), Some(pregame_st)) =
                 (&self.state.pregame_confirm, &self.state.pregame)
             {
-                self.state.ingame = Some(helpers::rfc(ingame::IngameState {
+                self.state.ingame = Some(helpers::amtx(ingame::IngameState {
                     game: Game::new(pregame_st.borrow().grid_size),
                     user: match turn.borrow().option_state {
                         X => Player::X,
                         O => Player::O,
                     },
                     selected: (0, 0),
+                    inthread: false,
                 }));
                 self.current_screen = CurrentScreen::Ingame;
             }
@@ -197,24 +199,43 @@ impl App {
     // ingame screen
     fn scr_ingame_render(&self, area: Rect, buf: &mut Buffer) {
         if let Some(ref st) = self.state.ingame {
-            ingame::IngameWidget(helpers::pass(st)).render(area, buf);
+            ingame::IngameWidget(helpers::pass_atomic(st)).render(area, buf);
+            let mut s = st.lock().unwrap();
+            // TODO
+            if s.user != s.game.turn() && !s.inthread {
+                s.inthread = true;
+                let state = helpers::pass_atomic(st);
+                thread::spawn(move || {
+                    let mut st = state.lock().unwrap();
+                    let best =
+                        toetactic_lib::get_best_move(&st.game, consts::SIZE_DEPTHS[st.game.grid().n()]);
+                    st.game.play(best);
+                    st.inthread = false;
+                });
+            }
         }
     }
 
     fn scr_ingame_handle_key(&mut self, key: KeyCode) {
         if let Some(ref st) = self.state.ingame {
-            let avail = st.borrow().game.empty();
-            let maxrc = st.borrow().game.grid().n() - 1;
-            let (r, c) = st.borrow().selected;
+            let mut s = st.lock().unwrap();
+            let (r, c) = s.selected;
+            let canplay = s.user == s.game.turn();
+            let maxrc = s.game.grid().n() - 1;
             let left = (r, c.saturating_sub(1));
             let down = (if r < maxrc { r + 1 } else { r }, c);
             let up = (r.saturating_sub(1), c);
             let right = (r, if c < maxrc { c + 1 } else { c });
             match key {
-                KeyCode::Left | KeyCode::Char('h') => st.borrow_mut().selected = left,
-                KeyCode::Down | KeyCode::Char('j') => st.borrow_mut().selected = down,
-                KeyCode::Up | KeyCode::Char('k') => st.borrow_mut().selected = up,
-                KeyCode::Right | KeyCode::Char('l') => st.borrow_mut().selected = right,
+                KeyCode::Left | KeyCode::Char('h') => s.selected = left,
+                KeyCode::Down | KeyCode::Char('j') => s.selected = down,
+                KeyCode::Up | KeyCode::Char('k') => s.selected = up,
+                KeyCode::Right | KeyCode::Char('l') => s.selected = right,
+                KeyCode::Char(' ') => {
+                    if canplay {
+                        s.game.play((r, c));
+                    }
+                }
                 _ => (),
             }
         }
