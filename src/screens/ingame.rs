@@ -46,10 +46,24 @@ impl Widget for &IngameWidget {
         let grid_size = st.game.grid().n();
         Block::default()
             .title(
-                Line::from(if st.game.turn() == st.user {
-                    "Your turn"
+                Line::from(if st.game.state() != GameState::Ongoing {
+                    vec![
+                        "GAME OVER".bold(),
+                        ": ".into(),
+                        match st.game.state() {
+                            GameState::Decisive(winner) => match winner {
+                                Player::X => "X wins!",
+                                Player::O => "O wins!",
+                            },
+                            GameState::Tied => "It's a tie!",
+                            _ => unreachable!(),
+                        }
+                        .into(),
+                    ]
+                } else if st.game.turn() == st.user {
+                    vec!["Your turn".into()]
                 } else {
-                    "The computer is thinking..."
+                    vec!["The computer is thinking...".into()]
                 })
                 .centered(),
             )
@@ -65,15 +79,28 @@ impl Widget for &IngameWidget {
                     border::PLAIN,
                     line::NORMAL,
                     true,
-                ); Block::new()
+                );
+                Block::new()
                     .borders(borders)
                     .border_set(border_set)
                     .render(cell, buf);
                 let content = st.game.grid().data()[r][c];
                 if content != mech::Cell::Empty {
                     Paragraph::new(match content {
-                        mech::Cell::X => "X",
-                        mech::Cell::O => "O",
+                        mech::Cell::X => {
+                            if st.user == Player::X {
+                                "X".bold().light_green()
+                            } else {
+                                "X".light_red()
+                            }
+                        }
+                        mech::Cell::O => {
+                            if st.user == Player::O {
+                                "O".bold().light_green()
+                            } else {
+                                "O".fg(Color::Rgb(255, 101, 101))
+                            }
+                        }
                         _ => unreachable!(),
                     })
                     .centered()
@@ -88,9 +115,9 @@ impl Widget for &IngameWidget {
                 {
                     Block::new()
                         .bg(if st.game.empty().contains(&(r, c)) {
-                            Color::LightBlue
+                            Color::LightCyan
                         } else {
-                            Color::LightRed
+                            Color::DarkGray
                         })
                         .render(helpers::centered_scale(cell, 0.4, 0.4), buf);
                 }

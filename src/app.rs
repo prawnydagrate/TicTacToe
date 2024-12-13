@@ -14,8 +14,8 @@ use ratatui::{
     widgets::{Block, Widget},
     DefaultTerminal, Frame,
 };
-use std::thread;
-use toetactic_lib::mech::{Game, Player};
+use std::{thread, time::Duration};
+use toetactic_lib::mech::{Game, GameState, Player};
 
 #[derive(Debug, Default)]
 pub struct App {
@@ -74,11 +74,13 @@ impl App {
     }
 
     fn handle_events(&mut self) -> AppResult {
-        match event::read()? {
-            Event::Key(key_event) if key_event.kind == KeyEventKind::Press => {
-                self.handle_key_press(key_event)
+        if event::poll(Duration::from_millis(0))? {
+            match event::read()? {
+                Event::Key(key_event) if key_event.kind == KeyEventKind::Press => {
+                    self.handle_key_press(key_event)
+                }
+                _ => (),
             }
-            _ => (),
         }
         Ok(())
     }
@@ -202,10 +204,9 @@ impl App {
             ingame::IngameWidget(helpers::pass_atomic(st)).render(area, buf);
             let mut s = st.lock().unwrap();
             // TODO
-            if s.user != s.game.turn() && !s.inthread {
+            if s.game.state() == GameState::Ongoing && s.user != s.game.turn() && !s.inthread {
                 s.inthread = true;
                 let game = s.game.clone();
-                std::mem::drop(s);
                 let state = helpers::pass_atomic(st);
                 thread::spawn(move || {
                     let best =
