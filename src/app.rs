@@ -1,4 +1,3 @@
-use std::thread;
 use crate::{
     app_state::AppState,
     consts, helpers,
@@ -15,6 +14,7 @@ use ratatui::{
     widgets::{Block, Widget},
     DefaultTerminal, Frame,
 };
+use std::thread;
 use toetactic_lib::mech::{Game, Player};
 
 #[derive(Debug, Default)]
@@ -125,7 +125,7 @@ impl App {
                 KeyCode::Enter => {
                     self.state.pregame_confirm =
                         Some(helpers::rfc(pregame_confirm::PregameConfirmState {
-                            pregame_state: s.clone(),
+                            pregame_state: *s,
                             option_state: pregame_confirm::PregameConfirmOptionState::default(),
                         }));
                     self.current_screen = CurrentScreen::PregameConfirm;
@@ -204,12 +204,14 @@ impl App {
             // TODO
             if s.user != s.game.turn() && !s.inthread {
                 s.inthread = true;
+                let game = s.game.clone();
+                std::mem::drop(s);
                 let state = helpers::pass_atomic(st);
                 thread::spawn(move || {
-                    let mut st = state.lock().unwrap();
                     let best =
-                        toetactic_lib::get_best_move(&st.game, consts::SIZE_DEPTHS[st.game.grid().n()]);
-                    st.game.play(best);
+                        toetactic_lib::get_best_move(&game, consts::SIZE_DEPTHS[game.grid().n()]);
+                    let mut st = state.lock().unwrap();
+                    st.game.play(best).unwrap();
                     st.inthread = false;
                 });
             }
@@ -220,7 +222,6 @@ impl App {
         if let Some(ref st) = self.state.ingame {
             let mut s = st.lock().unwrap();
             let (r, c) = s.selected;
-            let canplay = s.user == s.game.turn();
             let maxrc = s.game.grid().n() - 1;
             let left = (r, c.saturating_sub(1));
             let down = (if r < maxrc { r + 1 } else { r }, c);
@@ -232,7 +233,7 @@ impl App {
                 KeyCode::Up | KeyCode::Char('k') => s.selected = up,
                 KeyCode::Right | KeyCode::Char('l') => s.selected = right,
                 KeyCode::Char(' ') => {
-                    if canplay {
+                    if s.user == s.game.turn() {
                         s.game.play((r, c));
                     }
                 }

@@ -18,7 +18,7 @@ pub fn instructions() -> Vec<Span<'static>> {
     ]
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct IngameState {
     pub game: Game,
     pub user: Player,
@@ -42,18 +42,15 @@ impl Widget for &IngameWidget {
             Constraint::Length(gwidth),
             Constraint::Length(gheight),
         );
-        let mut st = self.0.lock().unwrap();
+        let st = self.0.lock().unwrap();
         let grid_size = st.game.grid().n();
         Block::default()
             .title(
-                Line::from(format!(
-                    "{}",
-                    if st.game.turn() == st.user {
-                        "Your turn"
-                    } else {
-                        "The computer is thinking..."
-                    }
-                ))
+                Line::from(if st.game.turn() == st.user {
+                    "Your turn"
+                } else {
+                    "The computer is thinking..."
+                })
                 .centered(),
             )
             .render(helpers::centered_scale(garea, 1.15, 1.15), buf);
@@ -68,8 +65,7 @@ impl Widget for &IngameWidget {
                     border::PLAIN,
                     line::NORMAL,
                     true,
-                );
-                Block::new()
+                ); Block::new()
                     .borders(borders)
                     .border_set(border_set)
                     .render(cell, buf);
@@ -86,7 +82,6 @@ impl Widget for &IngameWidget {
                         buf,
                     );
                 }
-                let userturn = st.game.turn() == st.user;
                 if st.selected == (r, c)
                     && st.game.turn() == st.user
                     && st.game.state() == GameState::Ongoing
@@ -99,7 +94,7 @@ impl Widget for &IngameWidget {
                         })
                         .render(helpers::centered_scale(cell, 0.4, 0.4), buf);
                 }
-                            }
+            }
         }
     }
 }

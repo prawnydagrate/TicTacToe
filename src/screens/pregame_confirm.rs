@@ -58,9 +58,8 @@ impl Widget for &PregameConfirmWidget {
         let mut width = 0;
         let text: String = wraplns
             .into_iter()
-            .map(|ln| {
+            .inspect(|ln| {
                 width = std::cmp::max(width, ln.len() as u16);
-                ln
             })
             .collect();
         Paragraph::new(text).centered().render(
