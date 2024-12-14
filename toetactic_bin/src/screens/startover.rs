@@ -18,33 +18,31 @@ pub fn instructions() -> Vec<Span<'static>> {
 }
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone, Default)]
-pub enum ExitingState {
+pub enum StartoverState {
     #[default]
     Stay,
-    Leave,
-    Left,
+    StartOver,
 }
+pub struct StartoverWidget(pub helpers::Rfc<StartoverState>);
 
-pub struct ExitingWidget(pub helpers::Rfc<ExitingState>);
-
-impl Widget for &ExitingWidget {
+impl Widget for &StartoverWidget {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let state = *self.0.borrow();
-        let opts = if state == ExitingState::Stay {
-            vec![" Stay ".bold().light_green(), " Leave ".dim()]
+        let state = self.0.borrow();
+        let opts = if *state == StartoverState::Stay {
+            vec![" Stay ".bold().light_green(), " Start over ".dim()]
         } else {
-            vec![" Stay ".dim(), " Leave ".bold().light_red()]
+            vec![" Stay ".dim(), " Start over ".bold().light_red()]
         };
         let options = Line::from(opts);
         Clear.render(area, buf);
         Block::bordered()
-            .title(Line::from(" Exit? ".bold()).centered())
+            .title(Line::from("Start over?".bold()).centered())
             .title_bottom(options.centered())
             .bg(consts::BGCOLOR)
             .border_set(border::ROUNDED)
             .render(area, buf);
         let wraplns = textwrap::wrap(
-            consts::EXIT_CONFIRM_TEXT,
+            consts::STARTOVER_TEXT,
             (area.width as f64 * 0.7).round() as usize,
         );
         let height = wraplns.len() as u16;

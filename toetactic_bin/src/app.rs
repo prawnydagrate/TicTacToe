@@ -1,7 +1,7 @@
 use crate::{
     app_state::AppState,
     consts, helpers,
-    screens::{exiting, ingame, pregame, pregame_confirm, CurrentScreen},
+    screens::{exiting, ingame, pregame, pregame_confirm, startover, CurrentScreen},
     AppResult,
 };
 use ratatui::{
@@ -30,10 +30,11 @@ impl Widget for &App {
             CurrentScreen::Pregame => pregame::instructions(),
             CurrentScreen::PregameConfirm => pregame_confirm::instructions(),
             CurrentScreen::Ingame => ingame::instructions(),
+            CurrentScreen::Startover => startover::instructions(),
             CurrentScreen::Exiting(_) => exiting::instructions(),
         });
         if !matches!(self.current_screen, CurrentScreen::Exiting(_)) {
-            instructions.extend([" qq".bold().blue(), " Exit ".into()]);
+            instructions.extend([" qq".bold().fg(consts::INSTRUCTIONS_COLOR), " Exit ".into()]);
         }
         let instructions = Line::from(instructions);
         let area = helpers::center(area, Constraint::Percentage(94), Constraint::Percentage(94));
@@ -47,6 +48,7 @@ impl Widget for &App {
             CurrentScreen::Pregame => self.scr_pregame_render(area, buf),
             CurrentScreen::PregameConfirm => self.scr_pregame_confirm_render(area, buf),
             CurrentScreen::Ingame => self.scr_ingame_render(area, buf),
+            CurrentScreen::Startover => self.scr_startover_render(area, buf),
             CurrentScreen::Exiting(_) => self.scr_exiting_render(area, buf),
         }
     }
@@ -98,6 +100,7 @@ impl App {
                 CurrentScreen::Pregame => self.scr_pregame_handle_key(key),
                 CurrentScreen::PregameConfirm => self.scr_pregame_confirm_handle_key(key),
                 CurrentScreen::Ingame => self.scr_ingame_handle_key(key),
+                CurrentScreen::Startover => self.scr_startover_handle_key(key),
                 CurrentScreen::Exiting(_) => self.scr_exiting_handle_key(key),
             },
         }
@@ -142,7 +145,7 @@ impl App {
         self.scr_pregame_render(area, buf);
         if let Some(ref st) = self.state.pregame_confirm {
             pregame_confirm::PregameConfirmWidget(helpers::pass(st)).render(
-                helpers::center(area, Constraint::Percentage(65), Constraint::Percentage(35)),
+                helpers::center(area, Constraint::Percentage(consts::DIALOG_PERCENTAGES.0), Constraint::Percentage(consts::DIALOG_PERCENTAGES.1)),
                 buf,
             );
         }
@@ -238,7 +241,60 @@ impl App {
                         s.game.play((r, c));
                     }
                 }
+                KeyCode::Char('r') => {
+                    self.state.startover = Some(helpers::rfc(startover::StartoverState::default()));
+                    self.current_screen = CurrentScreen::Startover;
+                }
                 _ => (),
+            }
+        }
+    }
+
+    // start over dialog
+    fn scr_startover_render(&self, area: Rect, buf: &mut Buffer) {
+        self.scr_ingame_render(area, buf);
+        if let Some(ref st) = self.state.startover {
+            startover::StartoverWidget(helpers::pass(st)).render(
+                helpers::center(area, Constraint::Percentage(consts::DIALOG_PERCENTAGES.0), Constraint::Percentage(consts::DIALOG_PERCENTAGES.1)),
+                buf,
+            );
+        }
+    }
+
+    fn scr_startover_handle_key(&mut self, key: KeyCode) {
+        use startover::StartoverState::*;
+
+        if let Some(ref s) = self.state.startover {
+            match key {
+                KeyCode::Right | KeyCode::Down | KeyCode::Char('l' | 'j') => {
+                    *s.borrow_mut() = StartOver;
+                }
+                KeyCode::Left | KeyCode::Up | KeyCode::Char('h' | 'k') => {
+                    *s.borrow_mut() = Stay;
+                }
+                KeyCode::Char('r') => {
+                    // final
+                    *s.borrow_mut() = StartOver;
+                    self.scr_startover_finish();
+                }
+                KeyCode::Esc => {
+                    self.current_screen = CurrentScreen::Ingame;
+                }
+                KeyCode::Enter => self.scr_startover_finish(),
+                _ => (),
+            }
+        }
+    }
+
+    fn scr_startover_finish(&mut self) {
+        use startover::StartoverState::*;
+
+        if let CurrentScreen::Startover = &self.current_screen {
+            if let Some(st) = &self.state.startover {
+                match *st.borrow() {
+                    Stay => self.current_screen = CurrentScreen::Ingame,
+                    StartOver => self.current_screen = CurrentScreen::Pregame,
+                }
             }
         }
     }
@@ -251,10 +307,11 @@ impl App {
                 CurrentScreen::Pregame => self.scr_pregame_render(area, buf),
                 CurrentScreen::PregameConfirm => self.scr_pregame_confirm_render(area, buf),
                 CurrentScreen::Ingame => self.scr_ingame_render(area, buf),
+                CurrentScreen::Startover => self.scr_startover_render(area, buf),
                 CurrentScreen::Exiting(_) => unreachable!(),
             }
             exiting::ExitingWidget(helpers::pass(st)).render(
-                helpers::center(area, Constraint::Percentage(65), Constraint::Percentage(35)),
+                helpers::center(area, Constraint::Percentage(consts::DIALOG_PERCENTAGES.0), Constraint::Percentage(consts::DIALOG_PERCENTAGES.1)),
                 buf,
             );
         }

@@ -10,9 +10,9 @@ use ratatui::{
 
 pub fn instructions() -> Vec<Span<'static>> {
     vec![
-        " ↑↓".bold().blue(),
+        " ↑↓".bold().fg(consts::INSTRUCTIONS_COLOR),
         " Change grid".into(),
-        "  ⏎".bold().blue(),
+        "  ⏎".bold().fg(consts::INSTRUCTIONS_COLOR),
         " Select grid ".into(),
     ]
 }

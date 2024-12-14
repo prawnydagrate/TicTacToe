@@ -11,14 +11,16 @@ use toetactic_lib::mech::{self, Game, GameState, Move, Player};
 
 pub fn instructions() -> Vec<Span<'static>> {
     vec![
-        " ←↑↓→".bold().blue(),
+        " ←↑↓→".bold().fg(consts::INSTRUCTIONS_COLOR),
         " Navigate".into(),
-        "  ⎵".bold().blue(),
-        " Play ".into(),
+        "  ⎵".bold().fg(consts::INSTRUCTIONS_COLOR),
+        " Play".into(),
+        "  rr".bold().fg(consts::INSTRUCTIONS_COLOR),
+        " Start over ".into(),
     ]
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub struct IngameState {
     pub game: Game,
     pub user: Player,
@@ -115,11 +117,11 @@ impl Widget for &IngameWidget {
                 {
                     Block::new()
                         .bg(if st.game.empty().contains(&(r, c)) {
-                            Color::LightCyan
+                            Color::Cyan
                         } else {
                             Color::DarkGray
                         })
-                        .render(helpers::centered_scale(cell, 0.4, 0.4), buf);
+                        .render(helpers::centered_scale(cell, 0.75, 0.75), buf);
                 }
             }
         }

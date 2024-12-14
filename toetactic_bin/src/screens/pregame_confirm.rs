@@ -11,9 +11,9 @@ use super::pregame;
 
 pub fn instructions() -> Vec<Span<'static>> {
     vec![
-        " ←→".bold().blue(),
+        " ←→".bold().fg(consts::INSTRUCTIONS_COLOR),
         " Change option".into(),
-        "  ⏎".bold().blue(),
+        "  ⏎".bold().fg(consts::INSTRUCTIONS_COLOR),
         " Select option ".into(),
     ]
 }
@@ -37,9 +37,9 @@ impl Widget for &PregameConfirmWidget {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let state = self.0.borrow();
         let opts = if state.option_state == PregameConfirmOptionState::X {
-            vec![" X ".bold().light_blue(), " O ".dim()]
+            vec![" X ".bold().light_yellow(), " O ".dim()]
         } else {
-            vec![" X ".dim(), " O ".bold().light_blue()]
+            vec![" X ".dim(), " O ".bold().light_yellow()]
         };
         let options = Line::from(opts);
         Clear.render(area, buf);
